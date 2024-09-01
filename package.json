@@ -1,10 +1,10 @@
 {
-  "name": "express-anon-middleware",
+  "name": "express-maskdata-middleware",
   "version": "0.1.0",
   "license": "MIT",
   "author": "Oriel Zaken",
   "main": "dist/index.js",
-  "module": "dist/express-anon-middleware.esm.js",
+  "module": "dist/express-maskdata-middleware.esm.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist",
@@ -38,11 +38,11 @@
   },
   "size-limit": [
     {
-      "path": "dist/express-anon-middleware.cjs.production.min.js",
+      "path": "dist/express-maskdata-middleware.cjs.production.min.js",
       "limit": "10 KB"
     },
     {
-      "path": "dist/express-anon-middleware.esm.js",
+      "path": "dist/express-maskdata-middleware.esm.js",
       "limit": "10 KB"
     }
   ],
