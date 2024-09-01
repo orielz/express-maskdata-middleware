@@ -30,7 +30,6 @@ export const createMaskingMiddleware = (rules: MaskingRules) => {
           // Mask the data using the provided rules
           let maskedResponse: Record<string, any>;
           try {
-            console.log({ jsonResponse, rules });
             maskedResponse = maskJSON2(jsonResponse, rules);
           } catch (err) {
             console.error('Error masking response:', err);
