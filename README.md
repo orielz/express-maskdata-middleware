@@ -1,103 +1,209 @@
-# DTS User Guide
+# express-maskdata-middleware
 
-Congrats! You just saved yourself hours of work by bootstrapping this project with DTS. Let’s get you oriented with what’s here and how to use it.
+`express-maskdata-middleware` is an Express middleware that allows you to mask sensitive data in API responses. This is useful for protecting sensitive information such as email addresses, passwords, and other personal data in responses sent by your API.
 
-> This DTS setup is meant for developing libraries (not apps!) that can be published to NPM. If you’re looking to build a Node app, you could use `ts-node-dev`, plain `ts-node`, or simple `tsc`.
+The middleware is built on top of the `maskdata` package and allows you to easily specify which fields in your JSON response should be masked.
 
-> If you’re new to TypeScript, checkout [this handy cheatsheet](https://devhints.io/typescript)
+## Features
+
+- Mask sensitive data such as emails, passwords, phone numbers, etc.
+- Easily configurable rules to define what fields should be masked.
+- Simple integration with existing Express applications.
+
+## Installation
+
+You can install the package using npm or yarn:
+
+```bash
+npm install express-maskdata-middleware
+```
+
+or
+
+```bash
+yarn add express-maskdata-middleware
+```
+
+## Usage
+
+To use the middleware in your Express app, simply import it, define your masking rules, and apply the middleware to your routes.
+
+Here's an example of how to use the middleware:
+
+```typescript
+import express from 'express';
+import { createMaskingMiddleware } from 'express-maskdata-middleware';
+
+const app = express();
+
+// Define your masking rules
+const maskingRules = {
+  emailFields: ['email'],
+  passwordFields: ['password'],
+};
+
+// Apply the masking middleware to all routes
+app.use(createMaskingMiddleware(maskingRules));
+
+app.get('/user', (req, res) => {
+  res.json({
+    email: 'user@example.com',
+    password: 'supersecretpassword',
+    username: 'testuser',
+  });
+});
+
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+```
+
+In this example, the middleware will mask the `email` and `password` fields in the JSON response, based on the rules defined in `maskingRules`.
+
+### Masking Options
+
+The middleware leverages the `maskdata` package and supports several masking options. Here are some of the key options you can use:
+
+- **emailFields**: An array of field names in your response that contain email addresses to be masked.
+- **passwordFields**: An array of field names in your response that contain passwords to be masked.
+- **phoneFields**: An array of field names in your response that contain phone numbers to be masked.
+- **ssnFields**: An array of field names in your response that contain SSNs (Social Security Numbers) to be masked.
+- **cardFields**: An array of field names in your response that contain credit card numbers to be masked.
+
+You can configure these options by passing them as an object when you create the middleware.
+
+```typescript
+const maskingRules = {
+  emailFields: ['email'],
+  passwordFields: ['password'],
+  phoneFields: ['phoneNumber'],
+  ssnFields: ['ssn'],
+  cardFields: ['creditCard'],
+};
+```
+
+## Testing
+
+Jest tests are set up to run with `npm test` or `yarn test`.
+
+We include both unit tests for the middleware logic and integration tests that demonstrate the middleware in action within a real Express app.
+
+For example, we test that sensitive data is masked correctly when making actual HTTP requests to the Express server.
+
+Here is an example of an integration test:
+
+```typescript
+import express from 'express';
+import request from 'supertest';
+import { createMaskingMiddleware } from '../src/index';
+
+describe('Masking Middleware in Express App', () => {
+  let app: express.Application;
+
+  beforeEach(() => {
+    app = express();
+
+    const maskingRules = {
+      emailFields: ['email'],
+      passwordFields: ['password'],
+    };
+
+    app.use(createMaskingMiddleware(maskingRules));
+
+    app.get('/test', (req, res) => {
+      res.json({
+        email: 'user@example.com',
+        password: 'supersecretpassword',
+        username: 'testuser',
+      });
+    });
+  });
+
+  it('should mask sensitive data in the API response', async () => {
+    const response = await request(app)
+      .get('/test')
+      .set('Accept', 'application/json');
+
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBe('use*@*********om'); // Expected masked email
+    expect(response.body.password).toBe('****************'); // Expected masked password
+    expect(response.body.username).toBe('testuser'); // Non-sensitive data should remain the same
+  });
+});
+```
 
 ## Commands
 
-DTS scaffolds your new library inside `/src`.
+### Development
 
-To run DTS, use:
+To run the project in watch mode, use:
 
 ```bash
 npm start # or yarn start
 ```
 
-This builds to `/dist` and runs the project in watch mode so any edits you save inside `src` causes a rebuild to `/dist`.
+This will build the project to `/dist` and watch for changes.
 
-To do a one-off build, use `npm run build` or `yarn build`.
+### Build
 
-To run tests, use `npm test` or `yarn test`.
+To do a one-off build, use:
 
-## Configuration
+```bash
+npm run build # or yarn build
+```
 
-Code quality is set up for you with `prettier`, `husky`, and `lint-staged`. Adjust the respective fields in `package.json` accordingly.
+### Tests
 
-### Jest
+To run the tests:
 
-Jest tests are set up to run with `npm test` or `yarn test`.
+```bash
+npm test # or yarn test
+```
 
 ### Bundle Analysis
 
-[`size-limit`](https://github.com/ai/size-limit) is set up to calculate the real cost of your library with `npm run size` and visualize the bundle with `npm run analyze`.
+You can analyze the bundle size using the following commands:
 
-#### Setup Files
-
-This is the folder structure we set up for you:
-
-```txt
-/src
-  index.ts        # EDIT THIS
-/test
-  index.test.ts   # EDIT THIS
-.gitignore
-package.json
-README.md         # EDIT THIS
-tsconfig.json
+```bash
+npm run size
+npm run analyze
 ```
-
-### Rollup
-
-DTS uses [Rollup](https://rollupjs.org) as a bundler and generates multiple rollup configs for various module formats and build settings. See [Optimizations](#optimizations) for details.
-
-### TypeScript
-
-`tsconfig.json` is set up to interpret `dom` and `esnext` types, as well as `react` for `jsx`. Adjust according to your needs.
 
 ## Continuous Integration
 
 ### GitHub Actions
 
-Two actions are added by default:
+Two GitHub Actions are configured:
 
-- `main` which installs deps w/ cache, lints, tests, and builds on all pushes against a Node and OS matrix
-- `size` which comments cost comparison of your library on every pull request using [`size-limit`](https://github.com/ai/size-limit)
-
-## Optimizations
-
-Please see the main `dts` [optimizations docs](https://github.com/weiran-zsd/dts-cli#optimizations). In particular, know that you can take advantage of development-only optimizations:
-
-```js
-// ./types/index.d.ts
-declare var __DEV__: boolean;
-
-// inside your code...
-if (__DEV__) {
-  console.log('foo');
-}
-```
-
-You can also choose to install and use [invariant](https://github.com/weiran-zsd/dts-cli#invariant) and [warning](https://github.com/weiran-zsd/dts-cli#warning) functions.
-
-## Module Formats
-
-CJS, ESModules, and UMD module formats are supported.
-
-The appropriate paths are configured in `package.json` and `dist/index.js` accordingly. Please report if any issues are found.
-
-## Named Exports
-
-Per Palmer Group guidelines, [always use named exports.](https://github.com/palmerhq/typescript#exports) Code split inside your React app instead of your React library.
-
-## Including Styles
-
-There are many ways to ship styles, including with CSS-in-JS. DTS has no opinion on this, configure how you like.
-
-For vanilla CSS, you can include it at the root directory and add it to the `files` section in your `package.json`, so that it can be imported separately by your users and run through their bundler's loader.
+- `main`: Installs dependencies, lints, tests, and builds the project on every push.
+- `size`: Comments on pull requests with a bundle size comparison using `size-limit`.
 
 ## Publishing to NPM
 
-We recommend using [np](https://github.com/sindresorhus/np).
+When you're ready to publish your package to npm, you can use [np](https://github.com/sindresorhus/np) for a smooth publishing experience.
+
+```bash
+npx np
+```
+
+This will handle version bumping, tagging, and publishing to npm.
+
+## Folder Structure
+
+Here's the structure of the project:
+
+```txt
+/src
+  index.ts        # The main middleware implementation
+/test
+  index.test.ts   # Unit tests for the middleware
+  createMaskingMiddleware.integration.test.ts  # Integration tests with a real Express app
+.gitignore
+package.json
+README.md         # This file
+tsconfig.json
+```
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
