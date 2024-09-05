@@ -14,9 +14,13 @@ export const createMaskingMiddleware = (rules: MaskingRules) => {
     // Override `res.send` to intercept and modify the response body
     res.send = function (body: any) {
       try {
-        // Check if the body is a JSON object or string that can be parsed as JSON
-        if (typeof body === 'object' || (typeof body === 'string' && body.startsWith('{') && body.endsWith('}'))) {
-          let jsonResponse: Record<string, any>;
+        // Check if the body is a JSON object, an array, or a string that can be parsed as JSON
+        if (
+          typeof body === 'object' || 
+          (typeof body === 'string' && body.startsWith('{') && body.endsWith('}')) || 
+          (typeof body === 'string' && body.startsWith('[') && body.endsWith(']'))
+        ) {
+          let jsonResponse: Record<string, any> | any[];
 
           // Attempt to parse the response body as JSON if it's a string
           try {
@@ -27,7 +31,19 @@ export const createMaskingMiddleware = (rules: MaskingRules) => {
             return originalSend.call(this, body);
           }
 
-          // Mask the data using the provided rules
+          // If the response is an array, apply the mask to each item
+          if (Array.isArray(jsonResponse)) {
+            try {
+              const maskedArray = jsonResponse.map(item => maskJSON2(item, rules));
+              return originalSend.call(this, JSON.stringify(maskedArray));
+            } catch (err) {
+              console.error('Error masking array response:', err);
+              // Send the original response if masking fails
+              return originalSend.call(this, body);
+            }
+          }
+
+          // If the response is an object, mask the data using the provided rules
           let maskedResponse: Record<string, any>;
           try {
             maskedResponse = maskJSON2(jsonResponse, rules);
@@ -41,7 +57,7 @@ export const createMaskingMiddleware = (rules: MaskingRules) => {
           return originalSend.call(this, JSON.stringify(maskedResponse));
         }
 
-        // If the response isn't JSON, send it as-is
+        // If the response isn't JSON or an array, send it as-is
         return originalSend.call(this, body);
       } catch (err) {
         console.error('Unexpected error in masking middleware:', err);
